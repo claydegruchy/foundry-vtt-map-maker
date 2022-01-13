@@ -1,5 +1,5 @@
 {
-  "name": "react-project-template",
+  "name": "foundry-vtt-map-maker",
   "version": "0.0.3",
   "scripts": {
     "dev": "vite",
