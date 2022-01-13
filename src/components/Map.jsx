@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import * as example from './fvtt-Scene-test-example.json';
-import Square from './Square';
+import { Square } from './Square';
+import Downloadfile from './Downloadfile';
 
 const Map = (props) => {
   const [dataShape, setDataShape] = useState(example);
@@ -38,6 +39,8 @@ const Map = (props) => {
           flexDirection: 'column',
         }}
       >
+        <button onClick={(e) => Downloadfile(dataShape)}>Save Map</button>
+
         {Array.from({ length: height }, (v, i) => (
           <Row
             key={i + 'column'}

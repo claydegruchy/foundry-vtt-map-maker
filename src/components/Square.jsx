@@ -54,23 +54,46 @@ const templates = {
   // wall:
 };
 
+const computeLocation = ({ rowNumber, columnNumber, shape }) => ({
+  y: columnNumber * shape.grid,
+  x: rowNumber * shape.grid,
+});
+
+const getTilesForLocation = ({ y, x, shape }) =>
+  shape.tiles.filter((t) => t.y == y && t.x == x);
+
+const updateTiles = ({ tiles, shape, setDataShape }) => {
+  var newShape = produce(shape, (draft) => {
+    draft.tiles = tiles;
+    return draft;
+  });
+  setDataShape(newShape);
+};
+
+const addTileToLocation = ({ y, x, shape, setDataShape }) =>
+  updateTiles({
+    setDataShape,
+    shape,
+    tiles: [...shape.tiles, templates.tile({ y, x })],
+  });
+
+const removeTileFromLocation = ({ y, x, shape, tile, setDataShape }) =>
+  updateTiles({
+    setDataShape,
+    shape,
+    tiles: shape.tiles.filter((t) => t._id != tile._id),
+  });
+
 const Square = ({ rowNumber, columnNumber, shape, setDataShape }) => {
   const [style, setStyle] = useState(defaultStyle);
 
-  const updateTiles = (tiles) => {
-    var newShape = produce(shape, (draft) => {
-      draft.tiles = tiles;
-      return draft;
-    });
-    setDataShape(newShape);
-  };
+  const getNeighbours = () => {};
 
-  var { grid, tiles, walls } = shape;
+  // const addTiles =tiles =>
 
-  var y = columnNumber * grid;
-  var x = rowNumber * grid;
+  var { x, y } = computeLocation({ rowNumber, columnNumber, shape });
 
-  var foundTiles = tiles.filter((t) => t.y == y && t.x == x);
+  var foundTiles = getTilesForLocation({ x, y, shape });
   var hasTiles = foundTiles.length > 0;
   // apply styles
   var thisStyle = { ...style.node };
@@ -82,10 +105,12 @@ const Square = ({ rowNumber, columnNumber, shape, setDataShape }) => {
   const handleClick = (e) => {
     if (hasTiles) {
       foundTiles.forEach((tile) => {
-        updateTiles(shape.tiles.filter((t) => t._id != tile._id));
+        // updateTiles(shape.tiles.filter((t) => t._id != tile._id));
+
+        removeTileFromLocation({ setDataShape, y, x, shape, tile });
       });
     } else {
-      updateTiles([...shape.tiles, templates.tile({ y, x })]);
+      addTileToLocation({ setDataShape, y, x, shape });
     }
   };
 
@@ -96,4 +121,4 @@ const Square = ({ rowNumber, columnNumber, shape, setDataShape }) => {
   );
 };
 
-export default Square;
+export { Square, computeLocation, getTilesForLocation };
