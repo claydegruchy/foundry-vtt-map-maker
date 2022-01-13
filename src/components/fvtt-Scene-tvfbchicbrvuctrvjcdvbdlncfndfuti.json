@@ -1,0 +1,168 @@
+{
+  "name": "tvfbchicbrvuctrvjcdvbdlncfndfuti",
+  "navigation": true,
+  "navOrder": 0,
+  "navName": "",
+  "img": null,
+  "foreground": null,
+  "width": 4000,
+  "height": 3000,
+  "padding": 0.25,
+  "initial": null,
+  "backgroundColor": "#999999",
+  "gridType": 1,
+  "grid": 100,
+  "shiftX": 0,
+  "shiftY": 0,
+  "gridColor": "#000000",
+  "gridAlpha": 0.2,
+  "gridDistance": 5,
+  "gridUnits": "m",
+  "tokenVision": true,
+  "fogExploration": true,
+  "fogReset": 1642085325452,
+  "globalLight": false,
+  "globalLightThreshold": null,
+  "darkness": 0,
+  "drawings": [],
+  "tokens": [],
+  "lights": [],
+  "notes": [],
+  "sounds": [],
+  "templates": [],
+  "tiles": [],
+  "walls": [
+    {
+      "_id": "FxVCQxnM7uLTIu6E",
+      "c": [
+        5000,
+        800,
+        5000,
+        900
+      ],
+      "light": 20,
+      "move": 20,
+      "sight": 20,
+      "sound": 20,
+      "dir": 0,
+      "door": 0,
+      "ds": 0,
+      "flags": {}
+    },
+    {
+      "_id": "Tyqn0PnGL3uvoH0m",
+      "c": [
+        100,
+        0,
+        100,
+        100
+      ],
+      "light": 20,
+      "move": 20,
+      "sight": 20,
+      "sound": 20,
+      "dir": 0,
+      "door": 0,
+      "ds": 0,
+      "flags": {}
+    },
+    {
+      "_id": "rT6TrSUrPWLXOnt4",
+      "c": [
+        400,
+        0,
+        400,
+        200
+      ],
+      "light": 20,
+      "move": 20,
+      "sight": 20,
+      "sound": 20,
+      "dir": 0,
+      "door": 0,
+      "ds": 0,
+      "flags": {}
+    },
+    {
+      "_id": "0skYZyox0L4fKfhz",
+      "c": [
+        700,
+        0,
+        700,
+        500
+      ],
+      "light": 20,
+      "move": 20,
+      "sight": 20,
+      "sound": 20,
+      "dir": 0,
+      "door": 0,
+      "ds": 0,
+      "flags": {}
+    },
+    {
+      "_id": "c80O1z1NBoiUo1Bx",
+      "c": [
+        0,
+        1000,
+        100,
+        1000
+      ],
+      "light": 20,
+      "move": 20,
+      "sight": 20,
+      "sound": 20,
+      "dir": 0,
+      "door": 0,
+      "ds": 0,
+      "flags": {}
+    },
+    {
+      "_id": "Ma5x2kDSEZDOzi0y",
+      "c": [
+        0,
+        1300,
+        300,
+        1300
+      ],
+      "light": 20,
+      "move": 20,
+      "sight": 20,
+      "sound": 20,
+      "dir": 0,
+      "door": 0,
+      "ds": 0,
+      "flags": {}
+    },
+    {
+      "_id": "fTVwZNanPNIChrWz",
+      "c": [
+        0,
+        1600,
+        600,
+        1600
+      ],
+      "light": 20,
+      "move": 20,
+      "sight": 20,
+      "sound": 20,
+      "dir": 0,
+      "door": 0,
+      "ds": 0,
+      "flags": {}
+    }
+  ],
+  "playlist": null,
+  "playlistSound": null,
+  "journal": null,
+  "weather": "",
+  "flags": {
+    "token-attacher": {},
+    "exportSource": {
+      "world": "test",
+      "system": "alienrpg",
+      "coreVersion": "9.242",
+      "systemVersion": "2.0.7"
+    }
+  }
+}

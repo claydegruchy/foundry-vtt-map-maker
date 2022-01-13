@@ -54,6 +54,21 @@ const templates = {
   // wall:
 };
 
+var wallLocations = ['top', 'right', 'left', 'bottom'];
+
+function isBetween(n, a, b) {
+  return (n - a) * (n - b) <= 0;
+}
+
+function range(start, stop, step = 1) {
+  var a = [start],
+    b = start;
+  while (b < stop) {
+    a.push((b += step || 1));
+  }
+  return a;
+}
+
 const computeLocation = ({ rowNumber, columnNumber, shape }) => ({
   y: columnNumber * shape.grid,
   x: rowNumber * shape.grid,
@@ -84,8 +99,33 @@ const removeTileFromLocation = ({ y, x, shape, tile, setDataShape }) =>
     tiles: shape.tiles.filter((t) => t._id != tile._id),
   });
 
+const getWallsForLocation = ({ y, x, shape }) =>
+  shape.walls.filter(({ c }) => {
+    var { grid } = shape;
+    var [xs, ys, xe, ye] = c;
+
+    if (x > 300 || y > 300) return;
+
+    console.log(range(xs, xe));
+
+    // if (xs) console.log({ xs, ys, xe, ye });
+
+    if (isBetween(xs, x, x + grid) && isBetween(ys, y, y + grid)) return true;
+    if (isBetween(xe, x, x + grid) && isBetween(ye, y, y + grid)) return true;
+
+    // console.log(x, x + grid, y, y + grid);
+
+    // x + grid;
+    // y + grid;
+  });
+
+const addWallToLocation = ({ y, x, shape, setDataShape, wallLocation }) => {
+  if (!wallLocations.includes(wallLocation)) throw 'give a valid wall location';
+};
+
 const Square = ({ rowNumber, columnNumber, shape, setDataShape }) => {
   const [style, setStyle] = useState(defaultStyle);
+  var thisStyle = { ...style.node };
 
   const getNeighbours = () => {};
 
@@ -95,18 +135,21 @@ const Square = ({ rowNumber, columnNumber, shape, setDataShape }) => {
 
   var foundTiles = getTilesForLocation({ x, y, shape });
   var hasTiles = foundTiles.length > 0;
-  // apply styles
-  var thisStyle = { ...style.node };
+
+  var foundWalls = getWallsForLocation({ x, y, shape });
+  var hasWalls = foundWalls.length > 0;
 
   if (hasTiles) {
+    thisStyle = { ...thisStyle, ...style.hasTile };
+  }
+
+  if (hasWalls) {
     thisStyle = { ...thisStyle, ...style.hasTile };
   }
 
   const handleClick = (e) => {
     if (hasTiles) {
       foundTiles.forEach((tile) => {
-        // updateTiles(shape.tiles.filter((t) => t._id != tile._id));
-
         removeTileFromLocation({ setDataShape, y, x, shape, tile });
       });
     } else {
@@ -115,8 +158,15 @@ const Square = ({ rowNumber, columnNumber, shape, setDataShape }) => {
   };
 
   return (
-    <div style={thisStyle} onClick={handleClick}>
-      {rowNumber}:{columnNumber}
+    <div
+      style={thisStyle}
+      onClick={handleClick}
+      onMouseMove={(e) => {
+        // if (e.buttons == 1) handleClick();
+      }}
+    >
+      <div>x{x}</div>
+      <div>y{y}</div>
     </div>
   );
 };

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import * as example from './fvtt-Scene-test-example.json';
+// import * as example from './fvtt-Scene-test-example.json';
+import * as example from './fvtt-Scene-tvfbchicbrvuctrvjcdvbdlncfndfuti.json';
+
 import { Square } from './Square';
 import Downloadfile from './Downloadfile';
 
