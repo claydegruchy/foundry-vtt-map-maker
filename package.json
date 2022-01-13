@@ -1,0 +1,20 @@
+{
+  "name": "react-project-template",
+  "version": "0.0.3",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "install": "sh actions/init_updates.sh",
+    "generate": "func() { X=$(echo \"$1\" | python -c 'import sys; print sys.stdin.readline().rstrip().capitalize()') ; plop \"$X\" && Y=$(echo import \"$X\" from \\'./components/\"$X\"\\'); echo $Y && echo $Y | pbcopy;}; func"
+  },
+  "dependencies": {
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^1.0.7",
+    "plop": "^3.0.5",
+    "vite": "^2.7.2"
+  }
+}
