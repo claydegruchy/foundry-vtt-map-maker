@@ -182,6 +182,10 @@ const Map = (props) => {
             <BuildingSquare />
             <BuildingSquare width={400} height={100} />
             <BuildingSquare width={100} height={400} />
+            <BuildingSquare width={100} height={400} />
+            <BuildingSquare width={100} height={400} />
+            <BuildingSquare width={100} height={400} />
+            <BuildingSquare width={100} height={400} />
           </Layer>
         </Stage>
         <Stage
