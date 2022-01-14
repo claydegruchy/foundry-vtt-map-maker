@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
 import * as example from './fvtt-Scene-test-example.json';
 // import * as example from './fvtt-Scene-tvfbchicbrvuctrvjcdvbdlncfndfuti.json';
-import { Stage, Layer, Rect, Text, Circle, Line, Shape } from 'react-konva';
+import {
+  Stage,
+  Layer,
+  Rect,
+  Text,
+  Circle,
+  Line,
+  Shape,
+  Transformer,
+} from 'react-konva';
 import * as turf from '@turf/turf';
 import { makeWall, makeScene } from './Vtt';
+import { Grid } from './Util';
 import Downloadfile from './Downloadfile';
 
 const getCorners = (rect) => {
@@ -50,7 +60,13 @@ var TerfMultiPoly = ({ features }) => {
   if (!features) return null;
 
   const P = ({ points }) => (
-    <Poly fill='#00FF00' stroke='black' strokeWidth={5} points={points} />
+    <Poly
+      key={points.length}
+      fill='#00FF00'
+      stroke='black'
+      strokeWidth={5}
+      points={points}
+    />
   );
 
   if (features.geometry.type == 'Polygon')
@@ -106,34 +122,95 @@ const convertPolyToScene = (poly) => {
 
   return makeScene({ walls });
 };
-
-const BuildingSquare = ({ shapeProps, onChange }) => {
-  console.log({ shapeProps });
+const Rectangle = ({
+  shapeProps,
+  isSelected,
+  onSelect,
+  onChange,
+  draggable = true,
+}) => {
   const shapeRef = React.useRef();
+  const trRef = React.useRef();
+
+  React.useEffect(() => {
+    if (isSelected) {
+      // we need to attach transformer manually
+      trRef.current.nodes([shapeRef.current]);
+      trRef.current.getLayer().batchDraw();
+    }
+  }, [isSelected]);
+
   return (
-    <Rect
-      // stroke={1}
-      x={shapeProps.x}
-      y={shapeProps.y}
-      width={shapeProps.width}
-      height={shapeProps.height}
-      fill={shapeProps.fill}
-      id={shapeProps.id}
-      // ref={shapeRef}
-      // fill={shapeProps.isDragging ? 'gray' : 'black'}
-      // {...shapeProps}
-      draggable
-      onDragEnd={(e) => {
-        console.log('calling ', 'onDragEnd');
-        onChange({
-          ...shapeProps,
-          x: e.target.x(),
-          y: e.target.y(),
-        });
-      }}
-    />
+    <React.Fragment>
+      <Rect
+        onClick={onSelect}
+        onTap={onSelect}
+        ref={shapeRef}
+        {...shapeProps}
+        draggable={draggable}
+        onDragEnd={(e) => {
+          onChange({
+            ...shapeProps,
+            x: e.target.x(),
+            y: e.target.y(),
+          });
+        }}
+        onTransformEnd={(e) => {
+          // transformer is changing scale of the node
+          // and NOT its width or height
+          // but in the store we have only width and height
+          // to match the data better we will reset scale on transform end
+          const node = shapeRef.current;
+          const scaleX = node.scaleX();
+          const scaleY = node.scaleY();
+
+          // we will reset it back
+          node.scaleX(1);
+          node.scaleY(1);
+          onChange({
+            ...shapeProps,
+            x: node.x(),
+            y: node.y(),
+            // set minimal value
+            width: Math.max(5, node.width() * scaleX),
+            height: Math.max(node.height() * scaleY),
+          });
+        }}
+      />
+      {isSelected && (
+        <Transformer
+          ref={trRef}
+          boundBoxFunc={(oldBox, newBox) => {
+            // limit resize
+            if (newBox.width < 5 || newBox.height < 5) {
+              return oldBox;
+            }
+            return newBox;
+          }}
+        />
+      )}
+    </React.Fragment>
   );
 };
+
+const toolBoxRectangles = [
+  {
+    x: 10,
+    y: 10,
+    width: 100,
+    height: 100,
+    fill: 'black',
+    id: 't1',
+  },
+  {
+    x: 10,
+    y: 150,
+    width: 100,
+    height: 50,
+    fill: 'black',
+    id: 't2',
+  },
+];
 
 const initialRectangles = [
   {
@@ -157,13 +234,53 @@ const initialRectangles = [
 const Map = (props) => {
   const [dataShape, setDataShape] = useState(example);
   const [unionisedShape, setUnionisedShape] = useState();
-  const [rectangles, setRectangles] = useState(initialRectangles);
+  const [rectangles, setRectangles] = React.useState(initialRectangles);
+  const [selectedId, selectShape] = React.useState(null);
+  const [stageParams, setStageParams] = React.useState({
+    scaleX: 1,
+    scaleY: 1,
+    data: { gridSize: 100, area: 1000 },
+  });
 
+  const checkDeselect = (e) => {
+    // deselect when clicked on empty area
+    const clickedOnEmpty = e.target === e.target.getStage();
+    if (clickedOnEmpty) {
+      selectShape(null);
+    }
+  };
+
+  var changeZoom = (change) =>
+    setStageParams({
+      ...stageParams,
+      scaleX: stageParams.scaleX * change,
+      scaleY: stageParams.scaleY * change,
+    });
   return (
     <div>
       <div onClick={(e) => Downloadfile(convertPolyToScene(unionisedShape))}>
         Export
       </div>
+
+      <div onClick={(e) => changeZoom(1.5)}>Zoom In</div>
+      <div onClick={(e) => changeZoom(0.5)}>Zoom Out</div>
+
+      <input
+        type='text'
+        pattern='[0-9]*'
+        type='number'
+        onInput={(e) =>
+          setStageParams({
+            ...stageParams,
+            data: {
+              ...stageParams.data,
+              gridSize: (e.target.value > 0 && e.target.value) || 1,
+            },
+          })
+        }
+        value={stageParams.data.gridSize}
+      />
+
       <div
         style={{
           flexDirection: 'row',
@@ -173,33 +290,71 @@ const Map = (props) => {
         }}
       >
         <Stage
-          style={{ flex: 1, margin: 30, borderStyle: 'solid' }}
+          style={{ margin: 30, borderStyle: 'solid' }}
           width={window.innerWidth / 2.5}
           height={window.innerHeight / 1.1}
-          scaleX={0.5}
-          scaleY={0.5}
+          {...stageParams}
+          onMouseDown={checkDeselect}
+          onTouchStart={checkDeselect}
         >
-          <Layer
-            onDragEnd={(e) => {
-              setRectangles(e.currentTarget.getChildren());
+          {/*draw the grid*/}
+          <Layer>
+            <Grid
+              scale={stageParams.scaleX}
+              gridSize={stageParams.data.gridSize}
+              area={stageParams.data.area}
+            />
+          </Layer>
+          {/*draw the toolbox*/}
+          <Layer>
+            <Rect
+              x={0}
+              y={0}
+              opacity={0.5}
+              width={Math.max(...toolBoxRectangles.map((s) => s.width)) + 30}
+              height={toolBoxRectangles
+                .map((s) => s.height)
+                .reduce((partial_sum, a) => partial_sum + a, 100)}
+              fill={'gray'}
+            />
 
+            {toolBoxRectangles.map((rect, i) => {
+              return (
+                <Rectangle
+                  key={rect.id}
+                  shapeProps={rect}
+                  draggable={false}
+                  onClick={(e) => console.log(e)}
+                />
+              );
+            })}
+          </Layer>
+          {/*the later where we can cahnge shapes*/}
+          <Layer
+            onDragStart={(e) => {
+              setUnionisedShape(
+                ConvertLayerToTurfPoly(e.currentTarget.getChildren())
+              );
+            }}
+            onDragEnd={(e) => {
               setUnionisedShape(
                 ConvertLayerToTurfPoly(e.currentTarget.getChildren())
               );
             }}
           >
             {rectangles.map((rect, i) => {
-              console.log('drawing', { rect });
               return (
-                <BuildingSquare
-                  key={i}
+                <Rectangle
+                  key={i + 'r'}
                   shapeProps={rect}
+                  isSelected={rect.id === selectedId}
+                  onSelect={() => {
+                    selectShape(rect.id);
+                  }}
                   onChange={(newAttrs) => {
-                    console.log('upating', { newAttrs });
-                    var r = [...rectangles];
-                    var { x, y, width, height, fill, id } = newAttrs;
-                    r[i] = { x, y, width, height, fill, id };
-                    setRectangles(r);
+                    const rects = rectangles.slice();
+                    rects[i] = newAttrs;
+                    setRectangles(rects);
                   }}
                 />
               );
@@ -207,10 +362,19 @@ const Map = (props) => {
           </Layer>
         </Stage>
         <Stage
-          style={{ flex: 1, margin: 30, borderStyle: 'solid' }}
+          style={{ margin: 30, borderStyle: 'solid' }}
           width={window.innerWidth / 2.5}
           height={window.innerHeight / 1.1}
+          {...stageParams}
         >
+          <Layer>
+            <Grid
+              scale={stageParams.scaleX}
+              gridSize={stageParams.data.gridSize}
+              area={stageParams.data.area}
+            />
+          </Layer>
+          {/*the later where we can see the final scene*/}
           <Layer>
             <TerfMultiPoly features={unionisedShape} />
           </Layer>
