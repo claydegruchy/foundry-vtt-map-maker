@@ -3,6 +3,8 @@ import * as example from './fvtt-Scene-test-example.json';
 // import * as example from './fvtt-Scene-tvfbchicbrvuctrvjcdvbdlncfndfuti.json';
 import { Stage, Layer, Rect, Text, Circle, Line, Shape } from 'react-konva';
 import * as turf from '@turf/turf';
+import { makeWall, makeScene } from './Vtt';
+import Downloadfile from './Downloadfile';
 
 const getCorners = (rect) => {
   let corners = [];
@@ -27,23 +29,7 @@ const getCorners = (rect) => {
   return newCorners;
 };
 
-const createTerfPoly = (coords) => turf.polygon([coords], { fill: '#0f0' });
-
-const union = (shape1, shape2) => {
-  console.log({ shape1, shape2 });
-  if (!shape1 || shape1.length < 1) return shape2;
-  if (!shape2 || shape2.length < 1) return shape1;
-
-  var poly1 = turf.polygon([shape1], { fill: '#0f0' });
-  var poly2 = turf.polygon([shape2], { fill: '#00f' });
-  var union = turf.union(poly1, poly2);
-
-  var u = turf.getCoords(union);
-
-  return u;
-};
-
-var CustomPoly = ({ points }) => (
+var Poly = ({ points }) => (
   <Shape
     sceneFunc={(context, shape) => {
       context.beginPath();
@@ -60,30 +46,87 @@ var CustomPoly = ({ points }) => (
   />
 );
 
-const BuildingSquare = ({ x = 50, y = 50 }) => {
-  const [shapeData, setShapeData] = useState({
-    isDragging: false,
-    x,
-    y,
-  });
+var TerfMultiPoly = ({ features }) => {
+  if (!features) return null;
 
+  const P = ({ points }) => (
+    <Poly fill='#00FF00' stroke='black' strokeWidth={5} points={points} />
+  );
+
+  if (features.geometry.type == 'Polygon')
+    return (
+      <>
+        <P points={[...turf.getCoords(features)[0]]} />
+      </>
+    );
+  if (features.geometry.type == 'MultiPolygon')
+    return (
+      <>
+        {turf.getCoords(features).map((c) => (
+          <P points={[...c[0]]} />
+        ))}
+      </>
+    );
+  return null;
+};
+
+const ConvertLayerToTurfPoly = (children) => {
+  var transformedShapes = [];
+  for (var shape of children) {
+    transformedShapes.push(turf.polygon([getCorners(shape)], { fill: '#0f0' }));
+  }
+  var newShape = transformedShapes[0];
+
+  for (var shape of transformedShapes.slice(1)) {
+    newShape = turf.union(newShape, shape);
+  }
+
+  return newShape;
+};
+
+const convertPolyToScene = (poly) => {
+  console.log({ poly });
+  if (!poly) return;
+  var walls = [];
+
+  var addWall = (points) => {
+    console.group('addwall');
+    walls = [...walls, ...makeWall(points)];
+    console.groupEnd('addwall');
+  };
+
+  if (poly.geometry.type == 'Polygon') {
+    addWall(turf.getCoords(poly));
+  }
+
+  if (poly.geometry.type == 'MultiPolygon') {
+    // console.log()
+    turf.getCoords(poly).forEach((c) => addWall(c));
+  }
+
+  return makeScene({ walls });
+};
+
+const BuildingSquare = ({ shapeProps, onChange }) => {
+  console.log({ shapeProps });
+  const shapeRef = React.useRef();
   return (
     <Rect
-      width={100}
-      height={100}
-      stroke={'blue'}
-      // shadowBlur={10}
-      x={shapeData.x}
-      y={shapeData.y}
+      // stroke={1}
+      x={shapeProps.x}
+      y={shapeProps.y}
+      width={shapeProps.width}
+      height={shapeProps.height}
+      fill={shapeProps.fill}
+      id={shapeProps.id}
+      // ref={shapeRef}
+      // fill={shapeProps.isDragging ? 'gray' : 'black'}
+      // {...shapeProps}
       draggable
-      // fillEnabled={false}
-      fill={shapeData.isDragging ? 'green' : 'black'}
-      onDragStart={() => {
-        setShapeData({ ...shapeData, isDragging: true });
-      }}
       onDragEnd={(e) => {
-        setShapeData({
-          isDragging: false,
+        console.log('calling ', 'onDragEnd');
+        onChange({
+          ...shapeProps,
           x: e.target.x(),
           y: e.target.y(),
         });
@@ -92,47 +135,87 @@ const BuildingSquare = ({ x = 50, y = 50 }) => {
   );
 };
 
+const initialRectangles = [
+  {
+    x: 10,
+    y: 10,
+    width: 100,
+    height: 100,
+    fill: 'red',
+    id: 'rect1',
+  },
+  {
+    x: 150,
+    y: 150,
+    width: 100,
+    height: 100,
+    fill: 'green',
+    id: 'rect2',
+  },
+];
+
 const Map = (props) => {
   const [dataShape, setDataShape] = useState(example);
+  const [unionisedShape, setUnionisedShape] = useState();
+  const [rectangles, setRectangles] = useState(initialRectangles);
 
-  const [unionisedShape, setUnionisedShape] = useState([]);
-
-  var { width, height, grid } = dataShape;
-
-  console.log({ unionisedShape });
   return (
-    <div style={{ margin: 30, borderStyle: 'solid' }}>
-      <Stage width={window.innerWidth} height={window.innerHeight}>
-        <Layer
-          onDragEnd={(e) => {
-            var transformedShapes = [];
-            for (var shape of e.currentTarget.getChildren()) {
-              transformedShapes.push(createTerfPoly(getCorners(shape)));
-            }
-            var newShape = [];
+    <div>
+      <div onClick={(e) => Downloadfile(convertPolyToScene(unionisedShape))}>
+        Export
+      </div>
+      <div
+        style={{
+          flexDirection: 'row',
+          alignItems: 'stretch',
 
-            for (var shape of transformedShapes) {
-            }
-
-            console.log(transformedShapes);
-
-            // var combined =
-            //   // .map((shape) => getCorners(shape))
-            //   .reduce((previousValue, currentValue) => {
-            //     return union(previousValue, currentValue);
-            //   }, []);
-            // console.log({ newShape });
-            // setUnionisedShape(newShape);
-          }}
+          display: 'flex',
+        }}
+      >
+        <Stage
+          style={{ flex: 1, margin: 30, borderStyle: 'solid' }}
+          width={window.innerWidth / 2.5}
+          height={window.innerHeight / 1.1}
+          scaleX={0.5}
+          scaleY={0.5}
         >
-          <BuildingSquare />
-          <BuildingSquare />
-          <BuildingSquare />
-        </Layer>
-        <Layer offsetX={-500}>
-          <CustomPoly points={unionisedShape} />
-        </Layer>
-      </Stage>
+          <Layer
+            onDragEnd={(e) => {
+              setRectangles(e.currentTarget.getChildren());
+
+              setUnionisedShape(
+                ConvertLayerToTurfPoly(e.currentTarget.getChildren())
+              );
+            }}
+          >
+            {rectangles.map((rect, i) => {
+              console.log('drawing', { rect });
+              return (
+                <BuildingSquare
+                  key={i}
+                  shapeProps={rect}
+                  onChange={(newAttrs) => {
+                    console.log('upating', { newAttrs });
+                    var r = [...rectangles];
+                    var { x, y, width, height, fill, id } = newAttrs;
+                    r[i] = { x, y, width, height, fill, id };
+                    setRectangles(r);
+                  }}
+                />
+              );
+            })}
+          </Layer>
+        </Stage>
+        <Stage
+          style={{ flex: 1, margin: 30, borderStyle: 'solid' }}
+          width={window.innerWidth / 2.5}
+          height={window.innerHeight / 1.1}
+        >
+          <Layer>
+            <TerfMultiPoly features={unionisedShape} />
+          </Layer>
+        </Stage>
+      </div>
     </div>
   );
 };
