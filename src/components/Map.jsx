@@ -70,6 +70,42 @@ var TerfMultiPoly = ({ features }) => {
   return null;
 };
 
+const BuildingSquare = ({
+  x = 50,
+  y = 50,
+  width = 200,
+  height = 200,
+  stroke = 'blue',
+}) => {
+  const [shapeData, setShapeData] = useState({
+    isDragging: false,
+    x,
+    y,
+  });
+
+  return (
+    <Rect
+      width={width}
+      height={height}
+      stroke={stroke}
+      x={shapeData.x}
+      y={shapeData.y}
+      draggable
+      fill={shapeData.isDragging ? 'gray' : 'black'}
+      onDragStart={() => {
+        setShapeData({ ...shapeData, isDragging: true });
+      }}
+      onDragEnd={(e) => {
+        setShapeData({
+          isDragging: false,
+          x: e.target.x(),
+          y: e.target.y(),
+        });
+      }}
+    />
+  );
+};
+
 const ConvertLayerToTurfPoly = (children) => {
   var transformedShapes = [];
   for (var shape of children) {
@@ -107,57 +143,10 @@ const convertPolyToScene = (poly) => {
   return makeScene({ walls });
 };
 
-const BuildingSquare = ({ shapeProps, onChange }) => {
-  console.log({ shapeProps });
-  const shapeRef = React.useRef();
-  return (
-    <Rect
-      // stroke={1}
-      x={shapeProps.x}
-      y={shapeProps.y}
-      width={shapeProps.width}
-      height={shapeProps.height}
-      fill={shapeProps.fill}
-      id={shapeProps.id}
-      // ref={shapeRef}
-      // fill={shapeProps.isDragging ? 'gray' : 'black'}
-      // {...shapeProps}
-      draggable
-      onDragEnd={(e) => {
-        console.log('calling ', 'onDragEnd');
-        onChange({
-          ...shapeProps,
-          x: e.target.x(),
-          y: e.target.y(),
-        });
-      }}
-    />
-  );
-};
-
-const initialRectangles = [
-  {
-    x: 10,
-    y: 10,
-    width: 100,
-    height: 100,
-    fill: 'red',
-    id: 'rect1',
-  },
-  {
-    x: 150,
-    y: 150,
-    width: 100,
-    height: 100,
-    fill: 'green',
-    id: 'rect2',
-  },
-];
-
 const Map = (props) => {
   const [dataShape, setDataShape] = useState(example);
   const [unionisedShape, setUnionisedShape] = useState();
-  const [rectangles, setRectangles] = useState(initialRectangles);
+  const [rectangles, setRectangles] = useState([]);
 
   return (
     <div>
@@ -188,22 +177,11 @@ const Map = (props) => {
               );
             }}
           >
-            {rectangles.map((rect, i) => {
-              console.log('drawing', { rect });
-              return (
-                <BuildingSquare
-                  key={i}
-                  shapeProps={rect}
-                  onChange={(newAttrs) => {
-                    console.log('upating', { newAttrs });
-                    var r = [...rectangles];
-                    var { x, y, width, height, fill, id } = newAttrs;
-                    r[i] = { x, y, width, height, fill, id };
-                    setRectangles(r);
-                  }}
-                />
-              );
-            })}
+            <BuildingSquare />
+            <BuildingSquare />
+            <BuildingSquare />
+            <BuildingSquare width={400} height={100} />
+            <BuildingSquare width={100} height={400} />
           </Layer>
         </Stage>
         <Stage
