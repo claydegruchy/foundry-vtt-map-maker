@@ -237,8 +237,8 @@ const Map = (props) => {
   const [rectangles, setRectangles] = React.useState(initialRectangles);
   const [selectedId, selectShape] = React.useState(null);
   const [stageParams, setStageParams] = React.useState({
-    scaleX: 1,
-    scaleY: 1,
+    scaleX: 0.5,
+    scaleY: 0.5,
     data: { gridSize: 100, area: 1000 },
   });
 
@@ -266,8 +266,6 @@ const Map = (props) => {
       <div onClick={(e) => changeZoom(0.5)}>Zoom Out</div>
 
       <input
-        type='text'
-        pattern='[0-9]*'
         type='number'
         onInput={(e) =>
           setStageParams({
