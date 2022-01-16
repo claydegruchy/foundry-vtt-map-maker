@@ -39,15 +39,44 @@ const templates = {
     ds: 0,
     flags: {},
   }),
+
+  drawing: ({ points, texture }) => ({
+    _id: uuidv4(),
+    author: 'HkYvsyS3L7U5KzuX',
+    type: 'p',
+    x: 0,
+    y: 0,
+    rotation: 0,
+    z: 0,
+    points,
+    bezierFactor: 0,
+    fillType: 2,
+    fillColor: '#28ccca',
+    fillAlpha: 0.5,
+    strokeWidth: 8,
+    strokeColor: '#696763',
+    strokeAlpha: 1,
+    texture,
+    // texture: 'modules/ship-maker/textures/Grate_Metal_B_01_small.png',
+    fontFamily: 'Signika',
+    fontSize: 48,
+    textColor: '#FFFFFF',
+    textAlpha: 1,
+    hidden: false,
+    locked: false,
+    flags: {},
+    text: '',
+  }),
 };
 
-const makeScene = ({ walls }) => {
+const makeScene = ({ walls, drawings }) => {
   var t = {
     ...example,
     name: uuidv4(),
     walls,
+    drawings,
   };
-
+  delete t['default'];
   return t;
 };
 
@@ -76,9 +105,17 @@ const makeWall = (e) => {
     walls.push(w);
   });
 
-  console.log(walls);
   console.groupEnd('makewall');
   return walls;
 };
 
-export { makeWall, makeScene };
+const makeDrawing = (points) => {
+  console.group('makeDrawing');
+
+  var points = points[0];
+
+  console.groupEnd('makeDrawing');
+  return templates.drawing({ points });
+};
+
+export { makeWall, makeScene, makeDrawing };

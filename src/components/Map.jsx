@@ -12,9 +12,10 @@ import {
   Transformer,
 } from 'react-konva';
 import * as turf from '@turf/turf';
-import { makeWall, makeScene } from './Vtt';
+import { makeWall, makeDrawing, makeScene } from './Vtt';
 import { Grid } from './Util';
 import Downloadfile from './Downloadfile';
+import { v4 as uuidv4 } from 'uuid';
 
 const getCorners = (rect) => {
   let corners = [];
@@ -104,10 +105,12 @@ const convertPolyToScene = (poly) => {
   console.log({ poly });
   if (!poly) return;
   var walls = [];
+  var drawings = [];
 
-  var addWall = (points) => {
+  var addWall = (points, center) => {
     console.group('addwall');
     walls = [...walls, ...makeWall(points)];
+    drawings = [...drawings, makeDrawing(points)];
     console.groupEnd('addwall');
   };
 
@@ -116,17 +119,17 @@ const convertPolyToScene = (poly) => {
   }
 
   if (poly.geometry.type == 'MultiPolygon') {
-    // console.log()
     turf.getCoords(poly).forEach((c) => addWall(c));
   }
 
-  return makeScene({ walls });
+  return makeScene({ walls, drawings });
 };
 const Rectangle = ({
   shapeProps,
   isSelected,
   onSelect,
   onChange,
+  onClick,
   draggable = true,
 }) => {
   const shapeRef = React.useRef();
@@ -143,7 +146,7 @@ const Rectangle = ({
   return (
     <React.Fragment>
       <Rect
-        onClick={onSelect}
+        onClick={onClick || onSelect}
         onTap={onSelect}
         ref={shapeRef}
         {...shapeProps}
@@ -193,6 +196,12 @@ const Rectangle = ({
   );
 };
 
+var defaultStageParams = {
+  scaleX: 0.5,
+  scaleY: 0.5,
+  data: { gridSize: 100, area: 1000, defaultColour: 'brown' },
+};
+
 const toolBoxRectangles = [
   {
     x: 10,
@@ -205,8 +214,8 @@ const toolBoxRectangles = [
   {
     x: 10,
     y: 150,
-    width: 100,
-    height: 50,
+    width: 50,
+    height: 200,
     fill: 'black',
     id: 't2',
   },
@@ -214,33 +223,35 @@ const toolBoxRectangles = [
 
 const initialRectangles = [
   {
-    x: 10,
-    y: 10,
+    x: 200,
+    y: 200,
     width: 100,
     height: 100,
-    fill: 'red',
+    fill: defaultStageParams.data.defaultColour,
     id: 'rect1',
   },
   {
-    x: 150,
-    y: 150,
+    x: 200,
+    y: 200,
     width: 100,
     height: 100,
-    fill: 'green',
+    fill: defaultStageParams.data.defaultColour,
     id: 'rect2',
   },
 ];
+
+const addShape = (shape) => ({
+  ...shape,
+  fill: defaultStageParams.data.defaultColour,
+  id: uuidv4(),
+});
 
 const Map = (props) => {
   const [dataShape, setDataShape] = useState(example);
   const [unionisedShape, setUnionisedShape] = useState();
   const [rectangles, setRectangles] = React.useState(initialRectangles);
   const [selectedId, selectShape] = React.useState(null);
-  const [stageParams, setStageParams] = React.useState({
-    scaleX: 0.5,
-    scaleY: 0.5,
-    data: { gridSize: 100, area: 1000 },
-  });
+  const [stageParams, setStageParams] = React.useState(defaultStageParams);
 
   const checkDeselect = (e) => {
     // deselect when clicked on empty area
@@ -283,7 +294,6 @@ const Map = (props) => {
         style={{
           flexDirection: 'row',
           alignItems: 'stretch',
-
           display: 'flex',
         }}
       >
@@ -314,6 +324,7 @@ const Map = (props) => {
                 .map((s) => s.height)
                 .reduce((partial_sum, a) => partial_sum + a, 100)}
               fill={'gray'}
+              cornerRadius={10}
             />
 
             {toolBoxRectangles.map((rect, i) => {
@@ -322,13 +333,22 @@ const Map = (props) => {
                   key={rect.id}
                   shapeProps={rect}
                   draggable={false}
-                  onClick={(e) => console.log(e)}
+                  onClick={(e) => {
+                    // add a copy of this shape to the scene
+
+                    setRectangles([...rectangles, addShape(rect)]);
+                  }}
                 />
               );
             })}
           </Layer>
           {/*the later where we can cahnge shapes*/}
           <Layer
+            onClick={(e) => {
+              setUnionisedShape(
+                ConvertLayerToTurfPoly(e.currentTarget.getChildren())
+              );
+            }}
             onDragStart={(e) => {
               setUnionisedShape(
                 ConvertLayerToTurfPoly(e.currentTarget.getChildren())
@@ -377,6 +397,11 @@ const Map = (props) => {
             <TerfMultiPoly features={unionisedShape} />
           </Layer>
         </Stage>
+      </div>
+      <div>
+        <pre>
+          ({JSON.stringify(convertPolyToScene(unionisedShape), null, 2)})
+        </pre>
       </div>
     </div>
   );
