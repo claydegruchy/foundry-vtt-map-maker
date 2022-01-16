@@ -1,6 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import * as example from './fvtt-Scene-tvfbchicbrvuctrvjcdvbdlncfndfuti.json';
 
+var colours = {
+  fillColor: '#003300',
+  strokeWidth: 8,
+  strokeColor: '#009933',
+};
+
 const templates = {
   tile: ({ x, y }) => ({
     _id: uuidv4(),
@@ -51,11 +57,9 @@ const templates = {
     points,
     bezierFactor: 0,
     fillType: 2,
-    fillColor: '#28ccca',
+    ...colours,
     fillAlpha: 0.5,
-    strokeWidth: 8,
-    strokeColor: '#696763',
-    strokeAlpha: 1,
+    strokeAlpha: 2,
     texture,
     // texture: 'modules/ship-maker/textures/Grate_Metal_B_01_small.png',
     fontFamily: 'Signika',
@@ -118,4 +122,4 @@ const makeDrawing = (points) => {
   return templates.drawing({ points });
 };
 
-export { makeWall, makeScene, makeDrawing };
+export { makeWall, makeScene, makeDrawing, colours };

@@ -12,7 +12,7 @@ import {
   Transformer,
 } from 'react-konva';
 import * as turf from '@turf/turf';
-import { makeWall, makeDrawing, makeScene } from './Vtt';
+import { makeWall, makeDrawing, makeScene, colours } from './Vtt';
 import { Grid } from './Util';
 import Downloadfile from './Downloadfile';
 import { v4 as uuidv4 } from 'uuid';
@@ -51,9 +51,10 @@ var Poly = ({ points }) => (
       context.closePath();
       context.fillStrokeShape(shape);
     }}
-    fill='#00D2FF'
-    stroke='black'
-    strokeWidth={1}
+    fill={colours.fillColor}
+    stroke={colours.strokeColor}
+    strokeWidth={colours.strokeWidth}
+    points={points}
   />
 );
 
@@ -63,23 +64,30 @@ var TerfMultiPoly = ({ features }) => {
   const P = ({ points }) => (
     <Poly
       key={points.length}
-      fill='#00FF00'
-      stroke='black'
-      strokeWidth={5}
+      fill={colours.fillColor}
+      stroke={colours.strokeColor}
+      strokeWidth={colours.strokeWidth}
       points={points}
     />
   );
 
+  var processFeature = (feature) => {
+    // console.log({ feature });
+    // feature = turf.transformScale(feature, 2);/
+    console.log({ feature2: feature });
+    return feature;
+  };
+
   if (features.geometry.type == 'Polygon')
     return (
       <>
-        <P points={[...turf.getCoords(features)[0]]} />
+        <P points={[...turf.getCoords(processFeature(features))[0]]} />
       </>
     );
   if (features.geometry.type == 'MultiPolygon')
     return (
       <>
-        {turf.getCoords(features).map((c) => (
+        {turf.getCoords(processFeature(features)).map((c) => (
           <P points={[...c[0]]} />
         ))}
       </>
@@ -131,6 +139,7 @@ const Rectangle = ({
   onChange,
   onClick,
   draggable = true,
+  transformEnd,
 }) => {
   const shapeRef = React.useRef();
   const trRef = React.useRef();
@@ -142,7 +151,6 @@ const Rectangle = ({
       trRef.current.getLayer().batchDraw();
     }
   }, [isSelected]);
-
   return (
     <React.Fragment>
       <Rect
@@ -197,15 +205,15 @@ const Rectangle = ({
 };
 
 var defaultStageParams = {
-  scaleX: 0.5,
-  scaleY: 0.5,
+  scaleX: 1,
+  scaleY: 1,
   data: { gridSize: 100, area: 1000, defaultColour: 'brown' },
 };
 
 const toolBoxRectangles = [
   {
     x: 10,
-    y: 10,
+    y: 10 + 50,
     width: 100,
     height: 100,
     fill: 'black',
@@ -213,7 +221,7 @@ const toolBoxRectangles = [
   },
   {
     x: 10,
-    y: 150,
+    y: 150 + 50,
     width: 50,
     height: 200,
     fill: 'black',
@@ -261,20 +269,20 @@ const Map = (props) => {
     }
   };
 
-  var changeZoom = (change) =>
-    setStageParams({
-      ...stageParams,
-      scaleX: stageParams.scaleX * change,
-      scaleY: stageParams.scaleY * change,
-    });
+  // var changeZoom = (change) =>
+  //   setStageParams({
+  //     ...stageParams,
+  //     scaleX: stageParams.scaleX * change,
+  //     scaleY: stageParams.scaleY * change,
+  //   });
   return (
     <div>
       <div onClick={(e) => Downloadfile(convertPolyToScene(unionisedShape))}>
         Export
       </div>
 
-      <div onClick={(e) => changeZoom(1.5)}>Zoom In</div>
-      <div onClick={(e) => changeZoom(0.5)}>Zoom Out</div>
+      {/*<div onClick={(e) => changeZoom(1.5)}>Zoom In</div>*/}
+      {/*<div onClick={(e) => changeZoom(0.5)}>Zoom Out</div>*/}
 
       <input
         type='number'
@@ -298,10 +306,13 @@ const Map = (props) => {
         }}
       >
         <Stage
+          key={'edit'}
+          scaleX={1}
+          scaleY={1}
           style={{ margin: 30, borderStyle: 'solid' }}
           width={window.innerWidth / 2.5}
           height={window.innerHeight / 1.1}
-          {...stageParams}
+          // {...stageParams}
           onMouseDown={checkDeselect}
           onTouchStart={checkDeselect}
         >
@@ -380,10 +391,13 @@ const Map = (props) => {
           </Layer>
         </Stage>
         <Stage
+          key={'view'}
+          scaleY={1}
+          scaleX={1}
           style={{ margin: 30, borderStyle: 'solid' }}
           width={window.innerWidth / 2.5}
           height={window.innerHeight / 1.1}
-          {...stageParams}
+          // {...stageParams}
         >
           <Layer>
             <Grid
@@ -394,6 +408,11 @@ const Map = (props) => {
           </Layer>
           {/*the later where we can see the final scene*/}
           <Layer>
+            {/*    <Text
+              text={stageParams.scaleX + ' x ' + stageParams.scaleY}
+              fontSize={12 / stageParams.scaleX}
+            />*/}
+
             <TerfMultiPoly features={unionisedShape} />
           </Layer>
         </Stage>
