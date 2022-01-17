@@ -234,7 +234,7 @@ const Rectangle = ({
 };
 
 var defaultStageParams = {
-  scale: 0.25,
+  scale: 0.3,
   data: {
     gridSize: 100,
     area: 1000,
@@ -257,17 +257,9 @@ const toolBoxRectangles = [
 ];
 
 const initialRectangles = [
-  // {
-  //   x: 300,
-  //   y: 300,
-  //   width: 300,
-  //   height: 300,
-  //   id: 'rect1',
-  // ...editShapeStyle,
-  // },
   {
-    x: 300,
-    y: 300,
+    x: 400,
+    y: 400,
     width: 500,
     height: 500,
     ...editShapeStyle,
@@ -286,7 +278,8 @@ const selectRect = (e) => e.getClassName() == 'Rect';
 var control = {
   flex: 1,
   backgroundColor: 'silver',
-  margin: 10,
+  margin: 5,
+  padding: 5,
   borderRadius: 10,
   justifyContent: 'center',
   textAlign: 'center', // <-- the magic
@@ -295,7 +288,11 @@ var control = {
   alignItems: 'center',
 };
 
-var ControlBox = (props) => <div style={control}>{props.children}</div>;
+var ControlBox = (props) => (
+  <div className={'control-box'} style={control}>
+    {props.children}
+  </div>
+);
 
 const Map = (props) => {
   const [dataShape, setDataShape] = useState(example);

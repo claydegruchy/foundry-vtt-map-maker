@@ -1,0 +1,9 @@
+.control-box > * {
+	width: 100%;
+	height: 100%;
+	justify-content: center;
+
+	/* Actual code */
+	display: flex;
+	align-items: center;
+}

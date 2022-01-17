@@ -14,9 +14,10 @@ var editShapeStyle = {
   strokeColor: '#009933',
 };
 const getOffset = (heightOfMap = 4000, widthOfMap = 3000) => {
-  return [heightOfMap / 4, widthOfMap / 4];
+  // return [heightOfMap * 0.25, widthOfMap * 0.266];
+  return [heightOfMap * 0.5, widthOfMap * 0.5];
 };
-const applyOffset = (x, y) => {
+const applyOffset = ([x, y]) => {
   var [xo, yo] = getOffset();
   return [x + xo, y + yo];
 };
@@ -110,8 +111,11 @@ const makeWall = (e) => {
     var nextPoint = l[i + 1];
     if (!nextPoint) nextPoint = l[0];
 
-    var [xs, ys] = thisPoint;
-    var [xe, ye] = nextPoint;
+    console.log(applyOffset([1, 2]));
+
+    // applyOffset;
+    var [xs, ys] = applyOffset(thisPoint);
+    var [xe, ye] = applyOffset(nextPoint);
 
     var w = templates.wall({
       xs,
@@ -131,6 +135,7 @@ const makeDrawing = (points) => {
   console.group('makeDrawing');
 
   var points = points[0];
+  points = points.map((p) => applyOffset(p));
 
   console.groupEnd('makeDrawing');
   return templates.drawing({ points });
