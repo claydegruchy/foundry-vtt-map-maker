@@ -178,13 +178,11 @@ const Rectangle = ({
         ref={shapeRef}
         {...shapeProps}
         draggable={draggable}
-        onDragStart={(e) => console.log({ ...e.target })}
-        // onMouseMove={(e) => console.log({...e.target})}
         onKeyDown={(e) => console.log(key)}
         onDragStart={(e) =>
           onChange({
             ...shapeProps,
-            strokeWidth: 8,
+            strokeWidth: editShapeStyle.strokeWidth,
             x: e.target.x(),
             y: e.target.y(),
           })
@@ -240,13 +238,6 @@ var defaultStageParams = {
   data: {
     gridSize: 100,
     area: 1000,
-    defaultColour: 'brown',
-    defaultEditStyle: {
-      fill: 'rgba(0,0,0,0.0)',
-      stroke: 'black',
-      strokeWidth: 8,
-      strokeColor: '#009933',
-    },
   },
 };
 
@@ -254,13 +245,13 @@ const toolBoxRectangles = [
   {
     width: 300,
     height: 300,
-    fill: 'black',
+    fill: 'rgba(0,0,0,0.4)',
     id: 't1',
   },
   {
     width: 150,
     height: 600,
-    fill: 'black',
+    fill: 'rgba(0,0,0,0.4)',
     id: 't2',
   },
 ];
@@ -290,6 +281,22 @@ const addShape = (shape) => ({
   id: uuidv4(),
 });
 
+const selectRect = (e) => e.getClassName() == 'Rect';
+
+var control = {
+  flex: 1,
+  backgroundColor: 'silver',
+  margin: 10,
+  borderRadius: 10,
+  justifyContent: 'center',
+  textAlign: 'center', // <-- the magic
+  width: '100%',
+  display: 'flex',
+  alignItems: 'center',
+};
+
+var ControlBox = (props) => <div style={control}>{props.children}</div>;
+
 const Map = (props) => {
   const [dataShape, setDataShape] = useState(example);
   const [unionisedShape, setUnionisedShape] = useState();
@@ -311,35 +318,9 @@ const Map = (props) => {
       scale: stageParams.scale * change,
     });
 
-  var toolboxDist = 0;
+  var toolboxDist = 30;
   return (
-    <div
-      onKeyDown={(e) => {
-        if (e.key === 'Delete' || e.key === 'Backspace') {
-          // Execute your logic here.
-          console.log(e);
-        }
-      }}
-    >
-      <div onClick={(e) => Downloadfile(convertPolyToScene(unionisedShape))}>
-        Export
-      </div>
-      Zoom: {stageParams.scale}
-      <div onClick={(e) => changeZoom(1.5)}>Zoom In</div>
-      <div onClick={(e) => changeZoom(0.5)}>Zoom Out</div>
-      <input
-        type='number'
-        onInput={(e) =>
-          setStageParams({
-            ...stageParams,
-            data: {
-              ...stageParams.data,
-              gridSize: (e.target.value > 0 && e.target.value) || 1,
-            },
-          })
-        }
-        value={stageParams.data.gridSize}
-      />
+    <div>
       <div
         style={{
           flexDirection: 'row',
@@ -348,21 +329,63 @@ const Map = (props) => {
         }}
         // this is beyond dumb
       >
+        <div
+          style={{
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            display: 'flex',
+          }}
+        >
+          <ControlBox>Zoom: {stageParams.scale.toFixed(2)}</ControlBox>
+          <ControlBox>
+            <div onClick={(e) => changeZoom(1.5)}>Zoom In</div>
+          </ControlBox>
+          <ControlBox>
+            <div onClick={(e) => changeZoom(0.5)}>Zoom Out</div>
+          </ControlBox>
+          <ControlBox>
+            {' '}
+            <label>
+              Grid size
+              <input
+                type='number'
+                min={50}
+                onInput={(e) =>
+                  setStageParams({
+                    ...stageParams,
+                    data: {
+                      ...stageParams.data,
+                      gridSize: (e.target.value > 0 && e.target.value) || 50,
+                    },
+                  })
+                }
+                value={stageParams.data.gridSize}
+              />
+            </label>
+          </ControlBox>
+          <ControlBox>
+            {' '}
+            <div
+              onClick={(e) => Downloadfile(convertPolyToScene(unionisedShape))}
+            >
+              Export
+            </div>
+          </ControlBox>
+        </div>
+
         <Stage
           scaleY={stageParams.scale}
           scaleX={stageParams.scale}
           key={'edit'}
           style={{ margin: 30, borderStyle: 'solid' }}
-          width={window.innerWidth / 2.5}
-          height={window.innerHeight / 1.1}
+          width={window.innerWidth / 1.2}
+          height={window.innerHeight / 1.2}
           onMouseDown={checkDeselect}
           onTouchStart={checkDeselect}
         >
           <Layer
           //the later where we can see the final scene
           >
-            <Text text={stageParams.scale} fontSize={12 / stageParams.scale} />
-
             <TerfMultiPoly features={unionisedShape} />
           </Layer>
           {/*draw the grid*/}
@@ -386,6 +409,7 @@ const Map = (props) => {
               fill={'gray'}
               cornerRadius={10}
             />
+            <Text text={'Toolbox'} fontSize={30} x={10} y={10} />
             {toolBoxRectangles.map((rect, i) => {
               toolboxDist += 10;
               rect.y = toolboxDist;
@@ -409,9 +433,7 @@ const Map = (props) => {
             onClick={(e) => {
               setUnionisedShape(
                 ConvertLayerToTurfPoly(
-                  e.currentTarget.getChildren(
-                    (e) => e.getClassName() == 'Rect'
-                  ),
+                  e.currentTarget.getChildren(selectRect),
                   stageParams.scale
                 )
               );
@@ -419,9 +441,7 @@ const Map = (props) => {
             onDragStart={(e) => {
               setUnionisedShape(
                 ConvertLayerToTurfPoly(
-                  e.currentTarget.getChildren(
-                    (e) => e.getClassName() == 'Rect'
-                  ),
+                  e.currentTarget.getChildren(selectRect),
                   stageParams.scale
                 )
               );
@@ -429,9 +449,7 @@ const Map = (props) => {
             onDragEnd={(e) => {
               setUnionisedShape(
                 ConvertLayerToTurfPoly(
-                  e.currentTarget.getChildren(
-                    (e) => e.getClassName() == 'Rect'
-                  ),
+                  e.currentTarget.getChildren(selectRect),
                   stageParams.scale
                 )
               );

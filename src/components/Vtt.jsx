@@ -3,7 +3,7 @@ import * as example from './fvtt-Scene-tvfbchicbrvuctrvjcdvbdlncfndfuti.json';
 
 var mapRenderStyle = {
   fillColor: '#003300',
-  strokeWidth: 8,
+  strokeWidth: 10,
   strokeColor: '#009933',
 };
 
@@ -12,6 +12,13 @@ var editShapeStyle = {
   stroke: 'black',
   strokeWidth: 8,
   strokeColor: '#009933',
+};
+const getOffset = (heightOfMap = 4000, widthOfMap = 3000) => {
+  return [heightOfMap / 4, widthOfMap / 4];
+};
+const applyOffset = (x, y) => {
+  var [xo, yo] = getOffset();
+  return [x + xo, y + yo];
 };
 
 const templates = {
