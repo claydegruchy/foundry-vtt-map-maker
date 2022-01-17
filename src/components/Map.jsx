@@ -63,7 +63,6 @@ var TerfMultiPoly = ({ features }) => {
 
   const P = ({ points }) => (
     <Poly
-      key={points.length}
       fill={colours.fillColor}
       stroke={colours.strokeColor}
       strokeWidth={colours.strokeWidth}
@@ -72,9 +71,12 @@ var TerfMultiPoly = ({ features }) => {
   );
 
   var processFeature = (feature) => {
-    // console.log({ feature });
-    // feature = turf.transformScale(feature, 2);/
-    console.log({ feature2: feature });
+    // try {
+    //   feature = turf.transformScale(feature, 4);
+    //   return feature;
+    // } catch (e) {
+    //   return feature;
+    // }
     return feature;
   };
 
@@ -110,7 +112,6 @@ const ConvertLayerToTurfPoly = (children) => {
 };
 
 const convertPolyToScene = (poly) => {
-  console.log({ poly });
   if (!poly) return;
   var walls = [];
   var drawings = [];
@@ -159,6 +160,9 @@ const Rectangle = ({
         ref={shapeRef}
         {...shapeProps}
         draggable={draggable}
+        onDragStart={(e) => console.log({ ...e.target })}
+        // onMouseMove={(e) => console.log({...e.target})}
+        onKeyDown={(e) => console.log(key)}
         onDragEnd={(e) => {
           onChange({
             ...shapeProps,
@@ -205,25 +209,20 @@ const Rectangle = ({
 };
 
 var defaultStageParams = {
-  scaleX: 1,
-  scaleY: 1,
+  scale: 1,
   data: { gridSize: 100, area: 1000, defaultColour: 'brown' },
 };
 
 const toolBoxRectangles = [
   {
-    x: 10,
-    y: 10 + 50,
-    width: 100,
-    height: 100,
+    width: 300,
+    height: 300,
     fill: 'black',
     id: 't1',
   },
   {
-    x: 10,
-    y: 150 + 50,
-    width: 50,
-    height: 200,
+    width: 150,
+    height: 600,
     fill: 'black',
     id: 't2',
   },
@@ -231,18 +230,18 @@ const toolBoxRectangles = [
 
 const initialRectangles = [
   {
-    x: 200,
-    y: 200,
-    width: 100,
-    height: 100,
+    x: 300,
+    y: 300,
+    width: 300,
+    height: 300,
     fill: defaultStageParams.data.defaultColour,
     id: 'rect1',
   },
   {
-    x: 200,
-    y: 200,
-    width: 100,
-    height: 100,
+    x: 300,
+    y: 300,
+    width: 300,
+    height: 300,
     fill: defaultStageParams.data.defaultColour,
     id: 'rect2',
   },
@@ -269,21 +268,28 @@ const Map = (props) => {
     }
   };
 
-  // var changeZoom = (change) =>
-  //   setStageParams({
-  //     ...stageParams,
-  //     scaleX: stageParams.scaleX * change,
-  //     scaleY: stageParams.scaleY * change,
-  //   });
+  var changeZoom = (change) =>
+    setStageParams({
+      ...stageParams,
+      scale: stageParams.scale * change,
+    });
+
+  var toolboxDist = 0;
   return (
-    <div>
+    <div
+      onKeyDown={(e) => {
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          // Execute your logic here.
+          console.log(e);
+        }
+      }}
+    >
       <div onClick={(e) => Downloadfile(convertPolyToScene(unionisedShape))}>
         Export
       </div>
-
-      {/*<div onClick={(e) => changeZoom(1.5)}>Zoom In</div>*/}
-      {/*<div onClick={(e) => changeZoom(0.5)}>Zoom Out</div>*/}
-
+      Zoom: {stageParams.scale}
+      <div onClick={(e) => changeZoom(1.5)}>Zoom In</div>
+      <div onClick={(e) => changeZoom(0.5)}>Zoom Out</div>
       <input
         type='number'
         onInput={(e) =>
@@ -297,33 +303,26 @@ const Map = (props) => {
         }
         value={stageParams.data.gridSize}
       />
-
       <div
         style={{
           flexDirection: 'row',
           alignItems: 'stretch',
           display: 'flex',
         }}
+        // this is beyond dumb
       >
         <Stage
+          scaleY={stageParams.scale / 4}
+          scaleX={stageParams.scale / 4}
           key={'edit'}
-          scaleX={1}
-          scaleY={1}
           style={{ margin: 30, borderStyle: 'solid' }}
           width={window.innerWidth / 2.5}
           height={window.innerHeight / 1.1}
-          // {...stageParams}
           onMouseDown={checkDeselect}
           onTouchStart={checkDeselect}
         >
           {/*draw the grid*/}
-          <Layer>
-            <Grid
-              scale={stageParams.scaleX}
-              gridSize={stageParams.data.gridSize}
-              area={stageParams.data.area}
-            />
-          </Layer>
+          <Layer></Layer>
           {/*draw the toolbox*/}
           <Layer>
             <Rect
@@ -339,6 +338,10 @@ const Map = (props) => {
             />
 
             {toolBoxRectangles.map((rect, i) => {
+              toolboxDist += 10;
+              rect.y = toolboxDist;
+              rect.x = 10;
+              toolboxDist += rect.height;
               return (
                 <Rectangle
                   key={rect.id}
@@ -346,7 +349,6 @@ const Map = (props) => {
                   draggable={false}
                   onClick={(e) => {
                     // add a copy of this shape to the scene
-
                     setRectangles([...rectangles, addShape(rect)]);
                   }}
                 />
@@ -389,29 +391,45 @@ const Map = (props) => {
               );
             })}
           </Layer>
+          {/*        <Layer
+          //the later where we can see the final scene
+          >
+            <Text text={stageParams.scale} fontSize={12 / stageParams.scale} />
+
+            <TerfMultiPoly
+              features={unionisedShape}
+              scale={stageParams.scale}
+            />
+          </Layer>*/}
+          <Layer>
+            <Grid
+              scale={stageParams.scale}
+              gridSize={stageParams.data.gridSize}
+              area={stageParams.data.area * 4}
+            />
+          </Layer>
         </Stage>
         <Stage
+          // no idea why i need to do this, this package is weird
+          scaleY={stageParams.scale}
+          scaleX={stageParams.scale}
           key={'view'}
-          scaleY={1}
-          scaleX={1}
           style={{ margin: 30, borderStyle: 'solid' }}
           width={window.innerWidth / 2.5}
           height={window.innerHeight / 1.1}
-          // {...stageParams}
         >
           <Layer>
             <Grid
-              scale={stageParams.scaleX}
+              scale={stageParams.scale}
               gridSize={stageParams.data.gridSize}
               area={stageParams.data.area}
             />
           </Layer>
-          {/*the later where we can see the final scene*/}
-          <Layer>
-            {/*    <Text
-              text={stageParams.scaleX + ' x ' + stageParams.scaleY}
-              fontSize={12 / stageParams.scaleX}
-            />*/}
+
+          <Layer
+          //the later where we can see the final scene
+          >
+            <Text text={stageParams.scale} fontSize={12 / stageParams.scale} />
 
             <TerfMultiPoly features={unionisedShape} />
           </Layer>
