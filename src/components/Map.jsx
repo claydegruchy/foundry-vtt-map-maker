@@ -12,14 +12,30 @@ import {
   Transformer,
 } from 'react-konva';
 import * as turf from '@turf/turf';
-import { makeWall, makeDrawing, makeScene, colours } from './Vtt';
+import {
+  makeWall,
+  makeDrawing,
+  makeScene,
+  mapRenderStyle,
+  editShapeStyle,
+} from './Vtt';
 import { Grid } from './Util';
 import Downloadfile from './Downloadfile';
 import { v4 as uuidv4 } from 'uuid';
 
-const getCorners = (rect) => {
+const getCorners = (rect, scale) => {
   let corners = [];
   let size = rect.size();
+  console.log({ size, scale });
+  console.log(
+    'getTransform',
+    rect.getTransform().m,
+
+    'getAbsoluteTransform',
+    rect.getAbsoluteTransform().m,
+    rect.getAbsoluteScale(),
+    rect.getAbsolutePosition()
+  );
 
   // Now get the 4 corner points
   corners[0] = { x: 0, y: 0 }; // top left
@@ -31,7 +47,7 @@ const getCorners = (rect) => {
   // And rotate the corners using the same transform as the rect.
   var newCorners = [];
   for (var corner of corners.filter((e) => e)) {
-    newCorners.push(rect.getAbsoluteTransform().point(corner)); // top left
+    newCorners.push(rect.getTransform().point(corner)); // top left
   }
 
   newCorners = newCorners.map(({ x, y }) => [x, y]);
@@ -51,9 +67,9 @@ var Poly = ({ points }) => (
       context.closePath();
       context.fillStrokeShape(shape);
     }}
-    fill={colours.fillColor}
-    stroke={colours.strokeColor}
-    strokeWidth={colours.strokeWidth}
+    fill={mapRenderStyle.fillColor}
+    stroke={mapRenderStyle.strokeColor}
+    strokeWidth={mapRenderStyle.strokeWidth}
     points={points}
   />
 );
@@ -63,9 +79,9 @@ var TerfMultiPoly = ({ features }) => {
 
   const P = ({ points }) => (
     <Poly
-      fill={colours.fillColor}
-      stroke={colours.strokeColor}
-      strokeWidth={colours.strokeWidth}
+      fill={mapRenderStyle.fillColor}
+      stroke={mapRenderStyle.strokeColor}
+      strokeWidth={mapRenderStyle.strokeWidth}
       points={points}
     />
   );
@@ -97,10 +113,12 @@ var TerfMultiPoly = ({ features }) => {
   return null;
 };
 
-const ConvertLayerToTurfPoly = (children) => {
+const ConvertLayerToTurfPoly = (children, scale) => {
   var transformedShapes = [];
   for (var shape of children) {
-    transformedShapes.push(turf.polygon([getCorners(shape)], { fill: '#0f0' }));
+    transformedShapes.push(
+      turf.polygon([getCorners(shape, scale)], { fill: '#0f0' })
+    );
   }
   var newShape = transformedShapes[0];
 
@@ -163,13 +181,22 @@ const Rectangle = ({
         onDragStart={(e) => console.log({ ...e.target })}
         // onMouseMove={(e) => console.log({...e.target})}
         onKeyDown={(e) => console.log(key)}
-        onDragEnd={(e) => {
+        onDragStart={(e) =>
           onChange({
             ...shapeProps,
+            strokeWidth: 8,
             x: e.target.x(),
             y: e.target.y(),
-          });
-        }}
+          })
+        }
+        onDragEnd={(e) =>
+          onChange({
+            ...shapeProps,
+            strokeWidth: 0,
+            x: e.target.x(),
+            y: e.target.y(),
+          })
+        }
         onTransformEnd={(e) => {
           // transformer is changing scale of the node
           // and NOT its width or height
@@ -209,8 +236,18 @@ const Rectangle = ({
 };
 
 var defaultStageParams = {
-  scale: 1,
-  data: { gridSize: 100, area: 1000, defaultColour: 'brown' },
+  scale: 0.25,
+  data: {
+    gridSize: 100,
+    area: 1000,
+    defaultColour: 'brown',
+    defaultEditStyle: {
+      fill: 'rgba(0,0,0,0.0)',
+      stroke: 'black',
+      strokeWidth: 8,
+      strokeColor: '#009933',
+    },
+  },
 };
 
 const toolBoxRectangles = [
@@ -229,27 +266,27 @@ const toolBoxRectangles = [
 ];
 
 const initialRectangles = [
+  // {
+  //   x: 300,
+  //   y: 300,
+  //   width: 300,
+  //   height: 300,
+  //   id: 'rect1',
+  // ...editShapeStyle,
+  // },
   {
     x: 300,
     y: 300,
-    width: 300,
-    height: 300,
-    fill: defaultStageParams.data.defaultColour,
-    id: 'rect1',
-  },
-  {
-    x: 300,
-    y: 300,
-    width: 300,
-    height: 300,
-    fill: defaultStageParams.data.defaultColour,
+    width: 500,
+    height: 500,
+    ...editShapeStyle,
     id: 'rect2',
   },
 ];
 
 const addShape = (shape) => ({
   ...shape,
-  fill: defaultStageParams.data.defaultColour,
+  ...editShapeStyle,
   id: uuidv4(),
 });
 
@@ -312,8 +349,8 @@ const Map = (props) => {
         // this is beyond dumb
       >
         <Stage
-          scaleY={stageParams.scale / 4}
-          scaleX={stageParams.scale / 4}
+          scaleY={stageParams.scale}
+          scaleX={stageParams.scale}
           key={'edit'}
           style={{ margin: 30, borderStyle: 'solid' }}
           width={window.innerWidth / 2.5}
@@ -321,8 +358,21 @@ const Map = (props) => {
           onMouseDown={checkDeselect}
           onTouchStart={checkDeselect}
         >
+          <Layer
+          //the later where we can see the final scene
+          >
+            <Text text={stageParams.scale} fontSize={12 / stageParams.scale} />
+
+            <TerfMultiPoly features={unionisedShape} />
+          </Layer>
           {/*draw the grid*/}
-          <Layer></Layer>
+          <Layer>
+            <Grid
+              scale={stageParams.scale}
+              gridSize={stageParams.data.gridSize}
+              area={stageParams.data.area * 4}
+            />
+          </Layer>
           {/*draw the toolbox*/}
           <Layer>
             <Rect
@@ -336,7 +386,6 @@ const Map = (props) => {
               fill={'gray'}
               cornerRadius={10}
             />
-
             {toolBoxRectangles.map((rect, i) => {
               toolboxDist += 10;
               rect.y = toolboxDist;
@@ -359,17 +408,32 @@ const Map = (props) => {
           <Layer
             onClick={(e) => {
               setUnionisedShape(
-                ConvertLayerToTurfPoly(e.currentTarget.getChildren())
+                ConvertLayerToTurfPoly(
+                  e.currentTarget.getChildren(
+                    (e) => e.getClassName() == 'Rect'
+                  ),
+                  stageParams.scale
+                )
               );
             }}
             onDragStart={(e) => {
               setUnionisedShape(
-                ConvertLayerToTurfPoly(e.currentTarget.getChildren())
+                ConvertLayerToTurfPoly(
+                  e.currentTarget.getChildren(
+                    (e) => e.getClassName() == 'Rect'
+                  ),
+                  stageParams.scale
+                )
               );
             }}
             onDragEnd={(e) => {
               setUnionisedShape(
-                ConvertLayerToTurfPoly(e.currentTarget.getChildren())
+                ConvertLayerToTurfPoly(
+                  e.currentTarget.getChildren(
+                    (e) => e.getClassName() == 'Rect'
+                  ),
+                  stageParams.scale
+                )
               );
             }}
           >
@@ -390,48 +454,6 @@ const Map = (props) => {
                 />
               );
             })}
-          </Layer>
-          {/*        <Layer
-          //the later where we can see the final scene
-          >
-            <Text text={stageParams.scale} fontSize={12 / stageParams.scale} />
-
-            <TerfMultiPoly
-              features={unionisedShape}
-              scale={stageParams.scale}
-            />
-          </Layer>*/}
-          <Layer>
-            <Grid
-              scale={stageParams.scale}
-              gridSize={stageParams.data.gridSize}
-              area={stageParams.data.area * 4}
-            />
-          </Layer>
-        </Stage>
-        <Stage
-          // no idea why i need to do this, this package is weird
-          scaleY={stageParams.scale}
-          scaleX={stageParams.scale}
-          key={'view'}
-          style={{ margin: 30, borderStyle: 'solid' }}
-          width={window.innerWidth / 2.5}
-          height={window.innerHeight / 1.1}
-        >
-          <Layer>
-            <Grid
-              scale={stageParams.scale}
-              gridSize={stageParams.data.gridSize}
-              area={stageParams.data.area}
-            />
-          </Layer>
-
-          <Layer
-          //the later where we can see the final scene
-          >
-            <Text text={stageParams.scale} fontSize={12 / stageParams.scale} />
-
-            <TerfMultiPoly features={unionisedShape} />
           </Layer>
         </Stage>
       </div>

@@ -1,8 +1,15 @@
 import { v4 as uuidv4 } from 'uuid';
 import * as example from './fvtt-Scene-tvfbchicbrvuctrvjcdvbdlncfndfuti.json';
 
-var colours = {
+var mapRenderStyle = {
   fillColor: '#003300',
+  strokeWidth: 8,
+  strokeColor: '#009933',
+};
+
+var editShapeStyle = {
+  fill: 'rgba(0,0,0,0.0)',
+  stroke: 'black',
   strokeWidth: 8,
   strokeColor: '#009933',
 };
@@ -57,7 +64,7 @@ const templates = {
     points,
     bezierFactor: 0,
     fillType: 2,
-    ...colours,
+    ...mapRenderStyle,
     fillAlpha: 0.5,
     strokeAlpha: 2,
     texture,
@@ -122,4 +129,4 @@ const makeDrawing = (points) => {
   return templates.drawing({ points });
 };
 
-export { makeWall, makeScene, makeDrawing, colours };
+export { makeWall, makeScene, makeDrawing, mapRenderStyle, editShapeStyle };
