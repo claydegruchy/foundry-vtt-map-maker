@@ -16,6 +16,9 @@ Instructions are insde the tool but:
 -   Hit export to get a Foundry VTT scene.
 -   Import the scene into Foundry. Add doors and other features from there.
 
+You can find info about importing scenes here:
+https://foundryvtt.com/article/scenes/
+
 # How does it work
 
 The tool uses konvajs to render a build area. The shapes in the build area are combined using Turfjs, the shapes from which are then calculated into a scene for VTT.

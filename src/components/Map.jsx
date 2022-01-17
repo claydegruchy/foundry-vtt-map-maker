@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import * as example from './fvtt-Scene-test-example.json';
 // import * as example from './fvtt-Scene-tvfbchicbrvuctrvjcdvbdlncfndfuti.json';
 import {
   Stage,
@@ -295,7 +294,6 @@ var ControlBox = (props) => (
 );
 
 const Map = (props) => {
-  const [dataShape, setDataShape] = useState(example);
   const [unionisedShape, setUnionisedShape] = useState();
   const [rectangles, setRectangles] = React.useState(initialRectangles);
   const [selectedId, selectShape] = React.useState(null);
