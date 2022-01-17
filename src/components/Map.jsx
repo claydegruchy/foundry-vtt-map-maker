@@ -289,7 +289,7 @@ var control = {
 };
 
 var ControlBox = (props) => (
-  <div className={'control-box'} style={control}>
+  <div className={'control-box'} style={{ ...control, flex: props.flex }}>
     {props.children}
   </div>
 );
@@ -341,7 +341,6 @@ const Map = (props) => {
             <div onClick={(e) => changeZoom(0.5)}>Zoom Out</div>
           </ControlBox>
           <ControlBox>
-            {' '}
             <label>
               Grid size
               <input
@@ -361,11 +360,22 @@ const Map = (props) => {
             </label>
           </ControlBox>
           <ControlBox>
-            {' '}
             <div
               onClick={(e) => Downloadfile(convertPolyToScene(unionisedShape))}
             >
               Export
+            </div>
+          </ControlBox>
+          <ControlBox flex={3}>
+            <div style={{ whiteSpace: 'pre-wrap' }}>
+              {`This is a wysiwyg editor for Foundry VTT.\n
+- Drag the outlined box (building component) to place a room. \n
+-  Click on a box in the toolbox to spawn a new building component.\n
+-  Click on a placed building component to resize or rotate\n
+- All touching components will merge into a single room. 
+-  Hit export to get a Foundry VTT scene. \n
+-  Import the scene into Foundry. Add doors and other features from there.\n
+Created by Clay D`}
             </div>
           </ControlBox>
         </div>
@@ -471,11 +481,6 @@ const Map = (props) => {
             })}
           </Layer>
         </Stage>
-      </div>
-      <div>
-        <pre>
-          ({JSON.stringify(convertPolyToScene(unionisedShape), null, 2)})
-        </pre>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import * as example from './fvtt-Scene-tvfbchicbrvuctrvjcdvbdlncfndfuti.json';
+import * as example from './fvtt-base-scene.json';
 
 var mapRenderStyle = {
   fillColor: '#003300',
