@@ -9,9 +9,15 @@
     "generate": "func() { X=$(echo \"$1\" | python -c 'import sys; print sys.stdin.readline().rstrip().capitalize()') ; plop \"$X\" && Y=$(echo import \"$X\" from \\'./components/\"$X\"\\'); echo $Y && echo $Y | pbcopy;}; func"
   },
   "dependencies": {
+    "@flatten-js/core": "^1.3.3",
+    "@turf/collect": "^6.5.0",
+    "@turf/turf": "^6.5.0",
     "immer": "^9.0.12",
+    "konva": "^8.3.2",
     "react": "^17.0.2",
+    "react-d3-library": "^1.1.8",
     "react-dom": "^17.0.2",
+    "react-konva": "^17.0.2-5",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
