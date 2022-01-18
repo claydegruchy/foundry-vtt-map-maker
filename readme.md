@@ -19,6 +19,9 @@ Instructions are insde the tool but:
 You can find info about importing scenes here:
 https://foundryvtt.com/article/scenes/
 
+Here is a short video of it in use:
+https://youtu.be/pBHtJnsCyTg
+
 # How does it work
 
 The tool uses konvajs to render a build area. The shapes in the build area are combined using Turfjs, the shapes from which are then calculated into a scene for VTT.
