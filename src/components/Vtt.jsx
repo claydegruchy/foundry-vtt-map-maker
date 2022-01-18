@@ -7,6 +7,38 @@ var mapRenderStyle = {
   strokeColor: '#009933',
 };
 
+var mapRenderStyles = {
+  default: {
+    fillColor: '#003300',
+    strokeWidth: 10,
+    strokeColor: '#009933',
+    stageBackground: '#999999',
+    gridlines: '#000000',
+  },
+  paper: {
+    fillColor: '#FFFFFF',
+    strokeWidth: 20,
+    strokeColor: '#000000',
+    stageBackground: '#FFFFFF',
+    gridlines: '#000000',
+  },
+  blueprint: {
+    fillColor: '#98AEDD',
+    strokeWidth: 30,
+    strokeColor: '#E4EAF6',
+    stageBackground: '#405CB1',
+    gridlines: '#FFFFFF',
+  },
+CRT:{
+      fillColor: '#030E04',
+    strokeWidth: 20,
+    strokeColor: '#00F562',
+    stageBackground: '#152D1B',
+    gridlines: '#8FBBA4',
+}
+
+};
+
 // todo: add blueprint mode
 
 var editShapeStyle = {
@@ -63,39 +95,45 @@ const templates = {
     flags: {},
   }),
 
-  drawing: ({ points, texture }) => ({
-    _id: uuidv4(),
-    author: 'HkYvsyS3L7U5KzuX',
-    type: 'p',
-    x: 0,
-    y: 0,
-    rotation: 0,
-    z: 0,
-    points,
-    bezierFactor: 0,
-    fillType: 2,
-    ...mapRenderStyle,
-    fillAlpha: 0.5,
-    strokeAlpha: 2,
-    texture,
-    // texture: 'modules/ship-maker/textures/Grate_Metal_B_01_small.png',
-    fontFamily: 'Signika',
-    fontSize: 48,
-    textColor: '#FFFFFF',
-    textAlpha: 1,
-    hidden: false,
-    locked: false,
-    flags: {},
-    text: '',
-  }),
+  drawing: ({ points, texture, style }) => {
+    console.log({ style });
+    return {
+      _id: uuidv4(),
+      author: 'HkYvsyS3L7U5KzuX',
+      type: 'p',
+      x: 0,
+      y: 0,
+      rotation: 0,
+      z: 0,
+      points,
+      bezierFactor: 0,
+      fillType: 2,
+      ...style,
+      fillAlpha: 0.5,
+      strokeAlpha: 2,
+      texture,
+      // texture: 'modules/ship-maker/textures/Grate_Metal_B_01_small.png',
+      fontFamily: 'Signika',
+      fontSize: 48,
+      textColor: '#FFFFFF',
+      textAlpha: 1,
+      hidden: false,
+      locked: false,
+      flags: {},
+      text: '',
+    };
+  },
 };
 
-const makeScene = ({ walls, drawings }) => {
+const makeScene = ({ walls, drawings, style }) => {
+  console.log({ style });
   var t = {
     ...example,
     name: uuidv4(),
     walls,
     drawings,
+    backgroundColor: style.stageBackground,
+    gridColor: style.gridlines,
   };
   delete t['default'];
   return t;
@@ -133,14 +171,21 @@ const makeWall = (e) => {
   return walls;
 };
 
-const makeDrawing = (points) => {
+const makeDrawing = (points, style) => {
   console.group('makeDrawing');
 
   var points = points[0];
   points = points.map((p) => applyOffset(p));
 
   console.groupEnd('makeDrawing');
-  return templates.drawing({ points });
+  return templates.drawing({ points, style });
 };
 
-export { makeWall, makeScene, makeDrawing, mapRenderStyle, editShapeStyle };
+export {
+  makeWall,
+  makeScene,
+  makeDrawing,
+  mapRenderStyle,
+  editShapeStyle,
+  mapRenderStyles,
+};
