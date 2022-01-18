@@ -2,7 +2,6 @@ import React from 'react';
 import { Line } from 'react-konva';
 
 const Grid = ({ gridSize, area, scale }) => {
-  console.log({ gridSize });
   return Array.from({ length: area * scale }).map((n, i) => (
     <>
       <Line

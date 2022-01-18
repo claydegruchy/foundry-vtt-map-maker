@@ -21,20 +21,11 @@ import {
 import { Grid } from './Util';
 import Downloadfile from './Downloadfile';
 import { v4 as uuidv4 } from 'uuid';
+import { Polygon } from '@flatten-js/core';
 
-const getCorners = (rect, scale) => {
+const getCorners = (rect) => {
   let corners = [];
   let size = rect.size();
-  console.log({ size, scale });
-  console.log(
-    'getTransform',
-    rect.getTransform().m,
-
-    'getAbsoluteTransform',
-    rect.getAbsoluteTransform().m,
-    rect.getAbsoluteScale(),
-    rect.getAbsolutePosition()
-  );
 
   // Now get the 4 corner points
   corners[0] = { x: 0, y: 0 }; // top left
@@ -73,8 +64,10 @@ var Poly = ({ points }) => (
   />
 );
 
-var TerfMultiPoly = ({ features }) => {
+var TerfMultiPoly = ({ features, lines }) => {
   if (!features) return null;
+
+  console.log({ lines });
 
   const P = ({ points }) => (
     <Poly
@@ -85,13 +78,19 @@ var TerfMultiPoly = ({ features }) => {
     />
   );
 
+  const L = ({ points }) => {
+    console.log({ points });
+    return (
+      <Line
+        fill={mapRenderStyle.fillColor}
+        stroke={mapRenderStyle.strokeColor}
+        strokeWidth={mapRenderStyle.strokeWidth / 2}
+        points={points}
+      />
+    );
+  };
+
   var processFeature = (feature) => {
-    // try {
-    //   feature = turf.transformScale(feature, 4);
-    //   return feature;
-    // } catch (e) {
-    //   return feature;
-    // }
     return feature;
   };
 
@@ -99,6 +98,9 @@ var TerfMultiPoly = ({ features }) => {
     return (
       <>
         <P points={[...turf.getCoords(processFeature(features))[0]]} />
+        {/*  {lines.map((l) => (
+          <L points={turf.getCoords(l).flat()} />
+        ))}*/}
       </>
     );
   if (features.geometry.type == 'MultiPolygon')
@@ -112,23 +114,36 @@ var TerfMultiPoly = ({ features }) => {
   return null;
 };
 
-const ConvertLayerToTurfPoly = (children, scale) => {
+const ConvertLayerToTurfPoly = (children) => {
   var transformedShapes = [];
   for (var shape of children) {
-    transformedShapes.push(
-      turf.polygon([getCorners(shape, scale)], { fill: '#0f0' })
-    );
+    transformedShapes.push(turf.polygon([getCorners(shape)], { fill: '#0f0' }));
   }
-  var newShape = transformedShapes[0];
+  // so theres a dependacy error with concaveman that stopps lineoverlap from working, so we need to ue another package
 
+  const findIntersect = (poly1, poly2) => {
+    var a = new Polygon(turf.getCoords(poly1));
+    var b = new Polygon(turf.getCoords(poly2));
+    var i = a.intersect(b);
+
+    if (i.length == 2) return i.map((p) => [p.x, p.y]);
+  };
+
+  var poly = transformedShapes[0];
+  var intersections = [];
+  const addLine = (geo) => {
+    if (geo) intersections.push(turf.lineString(geo));
+  };
   for (var shape of transformedShapes.slice(1)) {
-    newShape = turf.union(newShape, shape);
+    addLine(findIntersect(poly, shape));
+    poly = turf.union(poly, shape);
   }
 
-  return newShape;
+  return { poly, intersections };
 };
 
-const convertPolyToScene = (poly) => {
+const convertPolyToScene = ({ poly, intersections }) => {
+  console.log({ poly, intersections });
   if (!poly) return;
   var walls = [];
   var drawings = [];
@@ -272,7 +287,7 @@ const addShape = (shape) => ({
   id: uuidv4(),
 });
 
-const selectRect = (e) => e.getClassName() == 'Rect';
+const selectRect = (e) => e.getClassName() == 'Rect' && e.id() != 'deletebox';
 
 var control = {
   flex: 1,
@@ -295,6 +310,7 @@ var ControlBox = (props) => (
 
 const Map = (props) => {
   const [unionisedShape, setUnionisedShape] = useState();
+  const [trackerCenter, settrackerCenter] = useState([0, 0]);
   const [rectangles, setRectangles] = React.useState(initialRectangles);
   const [selectedId, selectShape] = React.useState(null);
   const [stageParams, setStageParams] = React.useState(defaultStageParams);
@@ -313,7 +329,23 @@ const Map = (props) => {
       scale: stageParams.scale * change,
     });
 
-  var toolboxDist = 30;
+  const applyChanges = (e) => {
+    var targets = e.currentTarget.getChildren(selectRect);
+    var bin = e.currentTarget.find('#deletebox')[0];
+
+    var remove = [];
+    for (var t of targets) {
+      if (Konva.Util.haveIntersection(t.getClientRect(), bin.getClientRect()))
+        remove.push(t.id());
+    }
+    setRectangles(rectangles.filter((r) => !remove.includes(r.id)));
+
+    setUnionisedShape(
+      ConvertLayerToTurfPoly(targets.filter((r) => !remove.includes(r.id())))
+    );
+  };
+
+  var toolboxDist = 40;
   return (
     <div>
       <div
@@ -359,7 +391,9 @@ const Map = (props) => {
           </ControlBox>
           <ControlBox>
             <div
-              onClick={(e) => Downloadfile(convertPolyToScene(unionisedShape))}
+              onClick={(e) =>
+                Downloadfile(convertPolyToScene(unionisedShape.poly))
+              }
             >
               Export
             </div>
@@ -389,20 +423,24 @@ Created by Clay D`}
           onTouchStart={checkDeselect}
         >
           <Layer
+          // draw the grid
           //the later where we can see the final scene
           >
-            <TerfMultiPoly features={unionisedShape} />
-          </Layer>
-          {/*draw the grid*/}
-          <Layer>
             <Grid
               scale={stageParams.scale}
               gridSize={stageParams.data.gridSize}
               area={stageParams.data.area * 4}
             />
+
+            <TerfMultiPoly
+              features={unionisedShape?.poly}
+              lines={unionisedShape?.intersections}
+            />
           </Layer>
-          {/*draw the toolbox*/}
-          <Layer>
+
+          <Layer
+          // draw the toolbox
+          >
             <Rect
               x={0}
               y={0}
@@ -414,7 +452,7 @@ Created by Clay D`}
               fill={'gray'}
               cornerRadius={10}
             />
-            <Text text={'Toolbox'} fontSize={30} x={10} y={10} />
+            <Text text={'Toolbox'} fontSize={40} x={10} y={10} />
             {toolBoxRectangles.map((rect, i) => {
               toolboxDist += 10;
               rect.y = toolboxDist;
@@ -433,32 +471,21 @@ Created by Clay D`}
               );
             })}
           </Layer>
-          {/*the later where we can cahnge shapes*/}
+          <Layer>
+            <Text
+              // stageParams.scale
+              text={'Bin'}
+              fontSize={50}
+              x={10}
+              y={toolboxDist + 100}
+            />
+          </Layer>
           <Layer
-            onClick={(e) => {
-              setUnionisedShape(
-                ConvertLayerToTurfPoly(
-                  e.currentTarget.getChildren(selectRect),
-                  stageParams.scale
-                )
-              );
-            }}
-            onDragStart={(e) => {
-              setUnionisedShape(
-                ConvertLayerToTurfPoly(
-                  e.currentTarget.getChildren(selectRect),
-                  stageParams.scale
-                )
-              );
-            }}
-            onDragEnd={(e) => {
-              setUnionisedShape(
-                ConvertLayerToTurfPoly(
-                  e.currentTarget.getChildren(selectRect),
-                  stageParams.scale
-                )
-              );
-            }}
+            // the layer where we can cahnge shapes
+
+            onDragEnd={applyChanges}
+            onClick={applyChanges}
+            onDragStart={applyChanges}
           >
             {rectangles.map((rect, i) => {
               return (
@@ -477,6 +504,24 @@ Created by Clay D`}
                 />
               );
             })}
+            <Rect
+              x={0}
+              y={toolboxDist + 100}
+              opacity={0.5}
+              width={Math.max(...toolBoxRectangles.map((s) => s.width)) + 30}
+              height={Math.max(...toolBoxRectangles.map((s) => s.width)) + 30}
+              fill={'red'}
+              id={'deletebox'}
+              cornerRadius={10}
+            />
+          </Layer>
+          <Layer>
+            <Circle
+              x={trackerCenter.x}
+              y={trackerCenter.y}
+              radius={20}
+              fill={'red'}
+            />
           </Layer>
         </Stage>
       </div>

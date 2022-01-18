@@ -7,6 +7,8 @@ var mapRenderStyle = {
   strokeColor: '#009933',
 };
 
+// todo: add blueprint mode
+
 var editShapeStyle = {
   fill: 'rgba(0,0,0,0.0)',
   stroke: 'black',
@@ -14,8 +16,8 @@ var editShapeStyle = {
   strokeColor: '#009933',
 };
 const getOffset = (heightOfMap = 4000, widthOfMap = 3000) => {
-  // return [heightOfMap * 0.25, widthOfMap * 0.266];
-  return [heightOfMap * 0.5, widthOfMap * 0.5];
+  return [heightOfMap * 0.25, widthOfMap * 0.266];
+  // return [heightOfMap * 0.5, widthOfMap * 0.5];
 };
 const applyOffset = ([x, y]) => {
   var [xo, yo] = getOffset();
